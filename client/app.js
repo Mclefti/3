@@ -20,8 +20,14 @@ class App {
     }
 
     initNodeEditor() {
+        globalThis.LiteGraph = globalThis.LiteGraph || {};
+        // Enable native touch and pointer event support on mobile/emulators
+        LiteGraph.is_touch_device = true; 
+        LiteGraph.catch_pointer_events = true;
+
         this.graph = new LGraph();
         this.canvas = new LGraphCanvas("#litegraphCanvas", this.graph);
+        this.canvas.allow_dragcanvas = true;
         
         // Ensure canvas resizes correctly
         window.addEventListener("resize", () => {

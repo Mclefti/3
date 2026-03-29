@@ -231,7 +231,8 @@ class TerrainEngine:
     def _compute_splat_map(self, heightmap: np.ndarray) -> np.ndarray:
         """
         Compute splat map for texture blending.
-        Channels: R=water/low, G=grass/mid, B=rock/high, A=snow/peaks
+        Channels: [0]=water, [1]=sand, [2]=grass, [3]=rock, [4]=snow
+        Thresholds mirror the 3D shader breakpoints.
         """
         grad_x = np.zeros_like(heightmap)
         grad_y = np.zeros_like(heightmap)
@@ -239,14 +240,21 @@ class TerrainEngine:
         grad_y[1:-1, :] = np.abs(heightmap[2:, :] - heightmap[:-2, :])
         slope = np.sqrt(grad_x**2 + grad_y**2)
 
-        water = np.clip(1 - heightmap / 0.3, 0, 1) * (1 - slope * 2)
-        grass = np.clip(1 - np.abs(heightmap - 0.4) / 0.2, 0, 1) * (1 - slope * 3)
-        rock  = np.clip(slope * 5, 0, 1) + np.clip((heightmap - 0.6) / 0.2, 0, 1) * 0.5
+        # h < 0.10  — water / ocean floor
+        water = np.clip(1 - heightmap / 0.10, 0, 1) * (1 - slope * 2)
+        # h 0.05–0.30 — beach / sand (peak at 0.15, matches shader sand band)
+        sand  = np.clip(1 - np.abs(heightmap - 0.15) / 0.15, 0, 1) * (1 - slope * 3)
+        # h 0.20–0.60 — vegetation / grass (peak at 0.40)
+        grass = np.clip(1 - np.abs(heightmap - 0.40) / 0.20, 0, 1) * (1 - slope * 3)
+        # steep slopes OR h > 0.55 — rock
+        rock  = np.clip(slope * 5, 0, 1) + np.clip((heightmap - 0.55) / 0.20, 0, 1) * 0.5
+        # h > 0.75 — snow peaks
         snow  = np.clip((heightmap - 0.75) / 0.25, 0, 1) * (1 - slope * 2)
 
-        total = water + grass + rock + snow + 0.001
+        total = water + sand + grass + rock + snow + 0.001
         splat_map = np.stack([
             water / total,
+            sand  / total,
             grass / total,
             rock  / total,
             snow  / total,

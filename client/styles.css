@@ -454,6 +454,7 @@ body {
     height: 100%;
     display: block;
     outline: none;
+    touch-action: none;
 }
 
 .viewport-overlay {
@@ -548,6 +549,12 @@ body {
 @media (max-width: 768px) {
     .main-content {
         flex-direction: column;
+    }
+
+    .node-editor-container {
+        min-height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
     }
 
     .sidebar {
